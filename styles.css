@@ -105,7 +105,8 @@ a{color:var(--brand)}
 .btn.mode.active{background:var(--brand);border-color:var(--brand);color:#fff}
 .refine-size{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px;white-space:nowrap}
 .refine-size input{flex:1;accent-color:var(--brand)}
-.refine-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.refine-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.refine-actions .btn{padding:12px 6px}
 
 /* ---------- landing sections ---------- */
 main{padding-bottom:24px}

@@ -18,7 +18,7 @@ const els = {
   modelStatus: $("modelStatus"),
   eraseMode: $("eraseMode"), keepMode: $("keepMode"),
   brushSize: $("brushSize"), brushSizeVal: $("brushSizeVal"),
-  undoStroke: $("undoStroke"), refineDone: $("refineDone"), refineCancel: $("refineCancel"),
+  undoStroke: $("undoStroke"), refineDone: $("refineDone"), refineCancel: $("refineCancel"), refineReset: $("refineReset"),
   compareStage: document.querySelector(".compare-wrap"), bgRow: document.querySelector(".bg-row"), actionsRow: document.querySelector(".actions"),
 };
 
@@ -143,6 +143,12 @@ function cleanMask(imgData, w, h) {
   for (let i = 0; i < n; i++) if (core[i]) { const r = find(i); size.set(r, (size.get(r) || 0) + 1); }
   let maxSize = 0;
   for (const s of size.values()) if (s > maxSize) maxSize = s;
+  // Guard: if the solid core is empty or tiny (< 0.5% of the frame), the
+  // model basically failed on this device — returning the raw mask is far
+  // better than zeroing everything into a blank image. A blank result is
+  // what the user saw on Android: the whole subject erased, not just the
+  // background. Cleanup must never manufacture a blank cutout.
+  if (maxSize < n * 0.005) return imgData;
   const keep = new Set();
   for (const [r, s] of size) if (s >= maxSize * 0.1) keep.add(r);
   // dilate the kept core by 2px (recovers the soft edge band)
@@ -178,6 +184,26 @@ async function cleanCutout(blob, w, h) {
   cleanMask(data, w, h);
   x.putImageData(data, 0, 0);
   return new Promise((r) => c.toBlob(r, "image/png"));
+}
+
+/* Is this cutout (near-)blank? Sample the alpha channel at small size:
+   fewer than 0.5% of pixels with any real opacity means the subject is
+   gone, not just the background. Fail-open: any decode error means "not
+   blank", so a check can never block a good result. */
+async function isMostlyBlank(blob) {
+  try {
+    const img = await createImageBitmap(blob);
+    const s = 64 / Math.max(img.width, img.height);
+    const c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(img.width * s));
+    c.height = Math.max(1, Math.round(img.height * s));
+    const x = c.getContext("2d");
+    x.drawImage(img, 0, 0, c.width, c.height);
+    const d = x.getImageData(0, 0, c.width, c.height).data;
+    let opaque = 0;
+    for (let i = 3; i < d.length; i += 4) if (d[i] > 10) opaque++;
+    return opaque / (d.length / 4) < 0.005;
+  } catch { return false; }
 }
 
 /* ---------- main pipeline ---------- */
@@ -252,9 +278,9 @@ async function handleFile(file) {
     els.dropzone.classList.remove("hidden");
     return;
   }
-  try {
+  const cutOnce = async (device) => {
     const out = await removeBackground(workBlob, {
-      ...bgConfig,
+      ...bgConfig, device,
       progress: (_key, current, total) => {
         if (total > 0 && !inferTimer) {
           seen = Math.max(seen, (current / total) * 100);
@@ -263,8 +289,25 @@ async function handleFile(file) {
         }
       },
     });
-    let cleaned = out;
-    try { cleaned = await cleanCutout(out, w, h); } catch { /* use the raw result */ }
+    try { return await cleanCutout(out, w, h); } catch { return out; }
+  };
+  try {
+    let cleaned = await cutOnce(bgConfig.device);
+    // A blank cutout means the model found no subject on this device
+    // (seen on Android: whole bag gone, not just the background). The GPU
+    // path is the usual suspect, so retry once on CPU — the known-good
+    // path — before giving up.
+    if (await isMostlyBlank(cleaned) && bgConfig.device === "gpu") {
+      els.procNote.textContent = "The first attempt came out empty — retrying on this device's CPU…";
+      cleaned = await cutOnce("cpu");
+    }
+    if (await isMostlyBlank(cleaned)) {
+      stopInferTimer();
+      alert("The cutout came out empty on this device — the AI couldn't find a subject. Try a different photo.");
+      els.progressCard.classList.add("hidden");
+      els.dropzone.classList.remove("hidden");
+      return;
+    }
     stopInferTimer();
     state.resultBlob = cleaned;
     state.resultURL = URL.createObjectURL(cleaned);
@@ -365,6 +408,7 @@ async function compositeCanvas(scaleTo = null) {
 }
 
 els.downloadBtn.onclick = async () => {
+  if (await isMostlyBlank(state.resultBlob)) { alert("Nothing to download — the cutout is empty. Try the photo again, or Reset in Refine."); return; }
   const blob = await new Promise((r) => compositeCanvas().then((c) => c.toBlob(r, "image/png")));
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob); a.download = "cutzy.png"; a.click();
@@ -373,6 +417,7 @@ els.downloadBtn.onclick = async () => {
 
 /* ---------- viral loop: before/after share card ---------- */
 els.shareBtn.onclick = async () => {
+  if (await isMostlyBlank(state.resultBlob)) { alert("Nothing to share — the cutout came out empty. Try the photo again, or Reset in Refine."); return; }
   const W = 1080, H = 1350;
   const c = document.createElement("canvas"); c.width = W; c.height = H;
   const x = c.getContext("2d");
@@ -412,7 +457,7 @@ els.newBtn.onclick = () => { resetUI(); els.dropzone.classList.remove("hidden");
    BGone's own author admits. Erase cuts pixels out; Restore paints the
    original photo back in. Soft-edged brush, full undo, all on-device. */
 const refine = {
-  canvas: null, ctx: null, orig: null, stamp: null,
+  canvas: null, ctx: null, orig: null, stamp: null, pristine: null,
   undo: [], mode: "erase", size: 32, painting: false, last: null,
 };
 
@@ -425,6 +470,15 @@ els.brushSize.addEventListener("input", (e) => {
   buildStamp();
 });
 els.undoStroke.onclick = () => { if (refine.undo.length > 1) { refine.undo.pop(); refine.ctx.putImageData(refine.undo[refine.undo.length - 1], 0, 0); redrawRefine(); } };
+els.refineReset.onclick = () => {
+  // One tap back to the AI cutout, however much was erased — the pristine
+  // copy is kept aside (the undo stack caps at 25, so Reset can't rely on it).
+  if (refine.pristine) {
+    refine.ctx.putImageData(refine.pristine, 0, 0);
+    refine.undo = [refine.pristine];
+    redrawRefine();
+  }
+};
 els.refineCancel.onclick = exitRefine;
 els.refineDone.onclick = applyRefine;
 
@@ -465,6 +519,7 @@ async function enterRefine() {
   o.getContext("2d").drawImage(state.origBitmap, 0, 0, state.w, state.h);
   Object.assign(refine, { canvas: c, ctx, orig: o, undo: [], painting: false, last: null });
   buildStamp(); pushUndo();
+  refine.pristine = refine.undo[0]; // pre-refine cutout, kept aside so Reset always works
   els.refineCanvas.width = state.w; els.refineCanvas.height = state.h;
   redrawRefine();
   setRefineMode("erase");
@@ -540,6 +595,17 @@ els.refineCanvas.addEventListener("pointermove", (e) => {
 );
 
 async function applyRefine() {
+  // Don't let a swipe that erased the whole subject through: if the
+  // canvas is (near-)blank, stay in Refine — Reset brings the subject back.
+  try {
+    const d = refine.ctx.getImageData(0, 0, refine.canvas.width, refine.canvas.height).data;
+    let opaque = 0;
+    for (let i = 3; i < d.length; i += 4) if (d[i] > 10) opaque++;
+    if (opaque / (d.length / 4) < 0.005) {
+      alert("You erased the whole subject — tap Reset to bring it back, or Cancel to drop these edits.");
+      return;
+    }
+  } catch { /* proceed — the check is a safety net, not a gate */ }
   const blob = await new Promise((r) => refine.canvas.toBlob(r, "image/png"));
   if (blob) {
     state.resultURL && URL.revokeObjectURL(state.resultURL);
