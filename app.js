@@ -82,40 +82,50 @@ async function handleFile(file) {
   els.progressCard.classList.remove("hidden");
   setProgress(2, "Loading image…");
 
-  // Downscale huge photos so phones stay fast (max 1024px side — the model
-  // works at 1024 internally, so bigger inputs only cost time, not quality)
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, 1024 / Math.max(bitmap.width, bitmap.height));
-  const w = Math.round(bitmap.width * scale), h = Math.round(bitmap.height * scale);
-  const c = document.createElement("canvas"); c.width = w; c.height = h;
-  c.getContext("2d").drawImage(bitmap, 0, 0, w, h);
-  const workBlob = await new Promise((r) => c.toBlob(r, "image/png"));
-  Object.assign(state, { origBitmap: bitmap, w, h });
-  state.origURL = URL.createObjectURL(file);
-  els.imgBefore.src = state.origURL;
-
+  // The progress UI must never sit dead at 2%: start the clock NOW, before
+  // any slow step (photo decode, model session, inference). If nothing
+  // reports download progress within 2s, switch to the visibly-alive
+  // inference state with a live seconds counter — and after 2 minutes say
+  // plainly that this device is slow at this step, instead of hanging silently.
   const t0 = performance.now();
   let seen = 0;
   let inferTimer = null;
   let inferFallback = null;
+  let slowNoteShown = false;
   const stopInferTimer = () => { if (inferTimer) { clearInterval(inferTimer); inferTimer = null; } if (inferFallback) { clearTimeout(inferFallback); inferFallback = null; } };
-  // The library's progress only covers the model download: once it hits
-  // 100% the actual cutout still runs with no further updates, so switch
-  // to a visibly-alive state with an elapsed timer instead of a dead 100%.
   const startInferencePhase = () => {
     if (inferTimer) return;
     els.procBar.classList.add("working");
     els.procPct.parentElement.firstChild.textContent = "Removing background… ";
     els.procNote.textContent = "Model downloaded — now cutting out. Big photos can take a minute or two; keep this tab open.";
     inferTimer = setInterval(() => {
-      els.procPct.textContent = Math.floor((performance.now() - t0) / 1000) + "s";
+      const s = Math.floor((performance.now() - t0) / 1000);
+      els.procPct.textContent = s + "s";
+      if (s > 120 && !slowNoteShown) { slowNoteShown = true; els.procNote.textContent = "Still working — this device is slow at this step. Keep waiting, or try a smaller photo."; }
     }, 500);
   };
-  // If the model was preloaded, the progress callback may never fire at all
-  // (nothing left to download) — without this the UI would sit dead at 2%
-  // while the cutout runs. Fall back to the inference phase after 2s.
   inferFallback = setTimeout(() => { if (seen === 0) startInferencePhase(); }, 2000);
+
+  // Downscale huge photos so phones stay fast (max 1024px side — the model
+  // works at 1024 internally, so bigger inputs only cost time, not quality)
+  let w = 0, h = 0, workBlob = null;
   try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 1024 / Math.max(bitmap.width, bitmap.height));
+    w = Math.round(bitmap.width * scale); h = Math.round(bitmap.height * scale);
+    const c = document.createElement("canvas"); c.width = w; c.height = h;
+    c.getContext("2d").drawImage(bitmap, 0, 0, w, h);
+    workBlob = await new Promise((r) => c.toBlob(r, "image/png"));
+    Object.assign(state, { origBitmap: bitmap, w, h });
+    state.origURL = URL.createObjectURL(file);
+    els.imgBefore.src = state.origURL;
+  } catch {
+    stopInferTimer();
+    alert("That photo couldn't be read — try another photo.");
+    els.progressCard.classList.add("hidden");
+    els.dropzone.classList.remove("hidden");
+    return;
+  }
     const out = await removeBackground(workBlob, {
       ...bgConfig,
       progress: (_key, current, total) => {
