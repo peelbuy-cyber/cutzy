@@ -1,5 +1,5 @@
 /* Cutzy — all cutout work happens ON-DEVICE via @imgly/background-removal.
-   No API keys, no uploads, no servers. First run downloads the AI model once (~40 MB),
+   No API keys, no uploads, no servers. First run downloads the AI model once (~80 MB),
    then everything works offline. */
 import { removeBackground, preload } from "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1/+esm";
 
@@ -33,17 +33,20 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister())).catch(() => {});
 }
 
-/* ---------- speed: small quantized model + WebGPU when available ----------
-   The default was isnet_fp16 (~80 MB, WASM CPU) — minutes on phones.
-   isnet_quint8 is ~40 MB and int8 inference is faster; device 'gpu' uses
-   WebGPU where the browser has a REAL GPU (Chrome/Edge desktop + Android,
-   Safari 26+), falling back to CPU otherwise. The adapter is actually
-   requested — 'gpu' merely existing in the browser is not proof — and a
-   SwiftShader software adapter counts as no GPU (it is slower than CPU).
-   The model is preloaded in the background on page load so the first
-   cutout doesn't wait for the download. */
+/* ---------- quality: full-precision model + WebGPU when available ----------
+   isnet_quint8 (~40 MB, int8) was tried first for speed, but its quantized
+   mask is noisy: it leaves coloured background residue (visible on white),
+   fades thin parts like a bag handle, and leaves speckles inside the
+   subject. isnet_fp16 (~80 MB) is the full-precision model — a far cleaner,
+   sharper mask — and on a real GPU (WebGPU) it is still seconds. The model
+   is preloaded in the background on page load so the first cutout doesn't
+   wait for the download. Device 'gpu' uses WebGPU where the browser has a
+   REAL GPU (Chrome/Edge desktop + Android, Safari 26+), falling back to
+   CPU otherwise. The adapter is actually requested — 'gpu' merely existing
+   in the browser is not proof — and a SwiftShader software adapter counts
+   as no GPU (it is slower than CPU). */
 const bgConfig = {
-  model: "isnet_quint8",
+  model: "isnet_fp16",
   device: "cpu", // switched to 'gpu' only after a real WebGPU adapter is confirmed
 };
 const warmModel = async () => {
@@ -93,9 +96,9 @@ async function decodeImage(file) {
   }
 }
 
-/* Clean the AI's mask. The quantized model leaves coloured residue in the
+/* Clean the AI's mask. Even a good model leaves a little residue in the
    background — pale patches of the original backdrop that read as dirt on a
-   white background. Fix: take the solid core of the mask (alpha > 192),
+   white background. Fix: take the solid core of the mask (alpha > 160),
    keep only the main subject (largest connected region, plus any region at
    least a tenth its size), dilate that by 2px to recover the soft edge,
    and zero everything else. The original alpha is kept inside the region,
@@ -105,7 +108,7 @@ function cleanMask(imgData, w, h) {
   const origA = new Uint8Array(n);
   for (let i = 0; i < n; i++) origA[i] = d[i * 4 + 3];
   const core = new Uint8Array(n);
-  for (let i = 0; i < n; i++) core[i] = origA[i] > 192 ? 1 : 0;
+  for (let i = 0; i < n; i++) core[i] = origA[i] > 160 ? 1 : 0;
   // connected components of the core (union-find, 8-connectivity)
   const parent = new Int32Array(n);
   for (let i = 0; i < n; i++) parent[i] = i;
@@ -166,7 +169,7 @@ async function handleFile(file) {
   if (!file.type.startsWith("image/")) { alert("Please choose an image file."); return; }
   resetUI();
   els.procBar.classList.remove("working");
-  els.procNote.textContent = "First run downloads the AI model once (~40 MB). After that, cutouts run on your device and your photos never leave this phone.";
+  els.procNote.textContent = "First run downloads the AI model once (~80 MB). After that, cutouts run on your device and your photos never leave this phone.";
   els.dropzone.classList.add("hidden");
   els.progressCard.classList.remove("hidden");
   setProgress(2, "Loading image…");
