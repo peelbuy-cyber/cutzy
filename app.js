@@ -9,6 +9,7 @@ const els = {
   progressCard: $("progressCard"), procBar: $("procBar"), procPct: $("procPct"),
   resultCard: $("resultCard"), imgBefore: $("imgBefore"), imgAfter: $("imgAfter"),
   afterLayer: $("afterLayer"), compareRange: $("compareRange"), compareWrap: document.querySelector(".compare-wrap"),
+  compareGrip: $("compareGrip"),
   bgChips: [...document.querySelectorAll(".bg-chip")], bgColor: $("bgColor"), colorSwatch: $("colorSwatch"),
   downloadBtn: $("downloadBtn"), shareBtn: $("shareBtn"), refineBtn: $("refineBtn"), newBtn: $("newBtn"),
   modelNote: $("modelNote"), installBtn: $("installBtn"), procNote: document.querySelector("#progressCard .proc-note"),
@@ -135,6 +136,7 @@ function resetUI() {
 /* ---------- before / after slider ---------- */
 function syncCompare() {
   els.afterLayer.style.width = els.compareRange.value + "%";
+  els.compareGrip.style.left = els.compareRange.value + "%";
   els.imgAfter.style.width = els.compareWrap.clientWidth + "px"; // keep layers aligned
   els.imgAfter.style.maxWidth = "none";
 }

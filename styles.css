@@ -78,6 +78,7 @@ a{color:var(--brand)}
   background:conic-gradient(#d9d9d9 25%,#fff 0 50%,#d9d9d9 0 75%,#fff 0);background-size:16px 16px}
 .compare-after .compare-img{width:100vw;max-width:640px}
 .compare-hint{position:absolute;bottom:8px;left:0;right:0;text-align:center;color:#fff;font-size:12px;text-shadow:0 1px 4px #000;pointer-events:none}
+.compare-grip{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:50%;background:#fff;border:2px solid var(--brand);color:var(--brand);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;pointer-events:none;box-shadow:0 2px 10px rgba(20,30,60,.25);z-index:3}
 #compareRange{position:absolute;inset:0;width:100%;opacity:0;cursor:ew-resize;margin:0}
 
 .bg-row{display:flex;gap:10px;margin-top:14px;align-items:center}
@@ -124,6 +125,7 @@ main{padding-bottom:24px}
 .demo-after{position:absolute;inset:0;overflow:hidden;width:50%;border-right:3px solid var(--brand);
   background:conic-gradient(#d9d9d9 25%,#fff 0 50%,#d9d9d9 0 75%,#fff 0);background-size:16px 16px}
 .demo-hint{position:absolute;bottom:8px;left:0;right:0;text-align:center;color:#fff;font-size:12px;text-shadow:0 1px 4px #000;pointer-events:none}
+.demo-grip{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:50%;background:#fff;border:2px solid var(--brand);color:var(--brand);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;pointer-events:none;box-shadow:0 2px 10px rgba(20,30,60,.25);z-index:3}
 #demoRange{position:absolute;inset:0;width:100%;opacity:0;cursor:ew-resize;margin:0}
 
 .split{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
@@ -161,7 +163,10 @@ footer{background:#1f2a3d;color:#c7d0dd;margin-top:64px;padding:48px 20px 24px}
 footer .fineprint{color:#8b98ab;text-align:center;margin-top:32px}
 
 @media (max-width:860px){
-  .hero{grid-template-columns:1fr;margin-top:28px;gap:28px}
+  .nav{gap:12px;padding:10px 14px}
+  .nav-logo{flex-shrink:0}
+  .nav-cta{flex-shrink:0;padding:8px 12px;font-size:13px}
+  .hero{grid-template-columns:1fr;margin-top:20px;gap:28px}
   .hero h1{font-size:40px}
   .nav-links{display:none}
   .split{grid-template-columns:1fr}

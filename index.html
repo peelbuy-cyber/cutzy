@@ -48,7 +48,7 @@
         <button class="sample-thumb" type="button" onclick="cutzySample('./demo/product-before.svg')" title="Product sample"><img src="./demo/product-before.svg" alt="Product sample"></button>
         <button class="sample-thumb" type="button" onclick="cutzySample('./demo/pet-before.svg')" title="Animal sample"><img src="./demo/pet-before.svg" alt="Animal sample"></button>
       </div>
-      <p class="fineprint">Samples are illustrations — try it with a real photo for the best cutout.</p>
+      <p class="fineprint">Samples are AI-generated photos — try it with a real photo for the best cutout.</p>
     </div>
   </div>
 </header>
@@ -69,6 +69,7 @@
           <img id="imgAfter" class="compare-img" alt="Background removed">
         </div>
         <input id="compareRange" type="range" min="0" max="100" value="50" aria-label="Before after slider">
+        <div class="compare-grip" id="compareGrip">‹ ›</div>
         <div class="compare-hint">◀ drag to compare ▶</div>
       </div>
 
@@ -127,6 +128,7 @@
         <img id="demoAfter" class="demo-img" src="./demo/person-after.svg" alt="After background removal">
       </div>
       <input id="demoRange" type="range" min="0" max="100" value="50" aria-label="Before after slider">
+      <div class="demo-grip" id="demoGrip">‹ ›</div>
       <div class="demo-hint">◀ drag to compare ▶</div>
     </div>
     <p class="center"><a href="#tool">Try it with your own photo ↑</a></p>
@@ -221,9 +223,11 @@
   var demoAfter = document.getElementById('demoAfter');
   var demoLayer = document.getElementById('demoAfterLayer');
   var demoRange = document.getElementById('demoRange');
+  var demoGrip = document.getElementById('demoGrip');
   var demoWrap = document.getElementById('demoWrap');
   function syncDemo() {
     demoLayer.style.width = demoRange.value + '%';
+    demoGrip.style.left = demoRange.value + '%';
     demoAfter.style.width = demoWrap.clientWidth + 'px';
     demoAfter.style.maxWidth = 'none';
   }
