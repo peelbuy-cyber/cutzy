@@ -6,7 +6,6 @@
 <title>Cutzy — Free Background Remover, No Signup, No Watermark</title>
 <meta name="description" content="Remove image backgrounds free, on your phone. No signup, no watermark, photos never leave your device.">
 <meta name="theme-color" content="#ffffff">
-<link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
 <link rel="stylesheet" href="./styles.css">
 </head>
@@ -62,7 +61,7 @@
     <section id="progressCard" class="card hidden">
       <p class="proc-label">Loading image… <span id="procPct">0%</span></p>
       <div class="progress"><div id="procBar" class="progress-bar"></div></div>
-      <p class="proc-note">First run downloads the AI model once (~40&nbsp;MB). After that it works fully offline and your photos never leave this phone.</p>
+      <p class="proc-note">First run downloads the AI model once (~40&nbsp;MB). After that, cutouts run on your device and your photos never leave this phone.</p>
     </section>
 
     <section id="resultCard" class="card hidden">
@@ -147,7 +146,7 @@
     <div>
       <h2>All-in-one AI background remover</h2>
       <p>Cutzy cuts out a picture and isolates the background in seconds — on your device. Then pick any background: transparent, white, black, blurred, or your own colour. No uploads, no accounts, no per-image fees.</p>
-      <p>The model downloads once (~40&nbsp;MB) and then it works fully offline. Install it from your browser and it opens like a real app, fullscreen.</p>
+      <p>The model downloads once (~40&nbsp;MB), then every cutout runs on your device — no account, no uploads, no install.</p>
     </div>
     <div class="split-pair">
       <figure><img src="./demo/person-before.svg" alt="Person before background removal"><figcaption>Before</figcaption></figure>
@@ -281,7 +280,7 @@
       <a href="#tool">Transparent PNG</a>
       <a href="#tool">White background</a>
       <a href="#tool">Blurred background</a>
-      <a href="#tool">Install app</a>
+      <a href="#tool">Magic Brush</a>
     </div>
     <div>
       <h4>Support</h4>
@@ -301,8 +300,6 @@
     <p><a href="#faq">Terms of Service</a> · <a href="#faq">Privacy Policy</a> · <a href="#faq">Cookie Policy</a></p>
   </div>
 </footer>
-
-<button id="installBtn" class="btn primary install-fab hidden" type="button">＋ Install app</button>
 
 <script type="module" src="./app.js"></script>
 <script>

@@ -13,7 +13,7 @@ const els = {
   bgChips: [...document.querySelectorAll(".bg-chip")], bgColor: $("bgColor"), colorSwatch: $("colorSwatch"),
   shadowBtn: $("shadowBtn"),
   downloadBtn: $("downloadBtn"), shareBtn: $("shareBtn"), refineBtn: $("refineBtn"), newBtn: $("newBtn"),
-  modelNote: $("modelNote"), installBtn: $("installBtn"), procNote: document.querySelector("#progressCard .proc-note"),
+  modelNote: $("modelNote"), procNote: document.querySelector("#progressCard .proc-note"),
   refineCard: $("refineCard"), refineCanvas: $("refineCanvas"),
   modelStatus: $("modelStatus"),
   eraseMode: $("eraseMode"), keepMode: $("keepMode"),
@@ -24,11 +24,14 @@ const els = {
 
 const state = { origURL: null, origBitmap: null, resultURL: null, resultBlob: null, bg: "checker", color: "#6d28d9", w: 0, h: 0, shadow: false };
 
-/* ---------- PWA: service worker + install prompt ---------- */
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
-let deferredPrompt = null;
-window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferredPrompt = e; els.installBtn.classList.remove("hidden"); });
-els.installBtn.onclick = async () => { if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; els.installBtn.classList.add("hidden"); } };
+/* ---------- no install: Cutzy is a plain website, not an app ----------
+   Earlier versions registered a service worker — which also made the browser
+   offer to install it — and cached the page, so returning visitors kept
+   getting old versions. Remove any service worker left by those versions so
+   the site always loads fresh from the web. */
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister())).catch(() => {});
+}
 
 /* ---------- speed: small quantized model + WebGPU when available ----------
    The default was isnet_fp16 (~80 MB, WASM CPU) — minutes on phones.
@@ -59,28 +62,12 @@ els.cameraInput.addEventListener("change", (e) => e.target.files[0] && handleFil
 els.dropzone.addEventListener("drop", (e) => { const f = e.dataTransfer.files[0]; if (f) handleFile(f); });
 window.addEventListener("paste", (e) => { const f = [...(e.clipboardData?.items || [])].find((i) => i.type.startsWith("image/"))?.getAsFile(); if (f) handleFile(f); });
 
-/* ---------- shared via Android share sheet (Web Share Target) ---------- */
-(async () => {
-  if (!new URLSearchParams(location.search).has("shared")) return;
-  history.replaceState(null, "", location.pathname);
-  try {
-    const reg = await navigator.serviceWorker.ready;
-    const file = await new Promise((res) => {
-      const ch = new MessageChannel();
-      ch.port1.onmessage = (ev) => res(ev.data?.file || null);
-      reg.active.postMessage("get-shared-file", [ch.port2]);
-      setTimeout(() => res(null), 3000);
-    });
-    if (file) handleFile(file);
-  } catch { /* share pickup failed — user can pick manually */ }
-})();
-
 /* ---------- main pipeline ---------- */
 async function handleFile(file) {
   if (!file.type.startsWith("image/")) { alert("Please choose an image file."); return; }
   resetUI();
   els.procBar.classList.remove("working");
-  els.procNote.textContent = "First run downloads the AI model once (~40 MB). After that it works fully offline and your photos never leave this phone.";
+  els.procNote.textContent = "First run downloads the AI model once (~40 MB). After that, cutouts run on your device and your photos never leave this phone.";
   els.dropzone.classList.add("hidden");
   els.progressCard.classList.remove("hidden");
   setProgress(2, "Loading image…");
