@@ -11,7 +11,7 @@ const els = {
   afterLayer: $("afterLayer"), compareRange: $("compareRange"), compareWrap: document.querySelector(".compare-wrap"),
   bgChips: [...document.querySelectorAll(".bg-chip")], bgColor: $("bgColor"), colorSwatch: $("colorSwatch"),
   downloadBtn: $("downloadBtn"), shareBtn: $("shareBtn"), refineBtn: $("refineBtn"), newBtn: $("newBtn"),
-  modelNote: $("modelNote"), installBtn: $("installBtn"),
+  modelNote: $("modelNote"), installBtn: $("installBtn"), procNote: document.querySelector("#progressCard .proc-note"),
   refineCard: $("refineCard"), refineCanvas: $("refineCanvas"),
   eraseMode: $("eraseMode"), keepMode: $("keepMode"),
   brushSize: $("brushSize"), brushSizeVal: $("brushSizeVal"),
@@ -58,6 +58,8 @@ window.addEventListener("paste", (e) => { const f = [...(e.clipboardData?.items 
 async function handleFile(file) {
   if (!file.type.startsWith("image/")) { alert("Please choose an image file."); return; }
   resetUI();
+  els.procBar.classList.remove("working");
+  els.procNote.textContent = "First run downloads the AI model once (~40 MB). After that it works fully offline and your photos never leave this phone.";
   els.dropzone.classList.add("hidden");
   els.progressCard.classList.remove("hidden");
   setProgress(2, "Loading image…");
@@ -75,12 +77,31 @@ async function handleFile(file) {
 
   const t0 = performance.now();
   let seen = 0;
+  let inferTimer = null;
+  const stopInferTimer = () => { if (inferTimer) { clearInterval(inferTimer); inferTimer = null; } };
+  // The library's progress only covers the model download: once it hits
+  // 100% the actual cutout still runs with no further updates, so switch
+  // to a visibly-alive state with an elapsed timer instead of a dead 100%.
+  const startInferencePhase = () => {
+    if (inferTimer) return;
+    els.procBar.classList.add("working");
+    els.procPct.parentElement.firstChild.textContent = "Removing background… ";
+    els.procNote.textContent = "Model downloaded — now cutting out. Big photos can take a minute or two; keep this tab open.";
+    inferTimer = setInterval(() => {
+      els.procPct.textContent = Math.floor((performance.now() - t0) / 1000) + "s";
+    }, 500);
+  };
   try {
     const out = await removeBackground(workBlob, {
       progress: (_key, current, total) => {
-        if (total > 0) { seen = Math.max(seen, (current / total) * 100); setProgress(seen, "Removing background…"); }
+        if (total > 0) {
+          seen = Math.max(seen, (current / total) * 100);
+          if (seen >= 100) startInferencePhase();
+          else setProgress(Math.min(seen, 99), "Downloading AI model…");
+        }
       },
     });
+    stopInferTimer();
     state.resultBlob = out;
     state.resultURL = URL.createObjectURL(out);
     els.imgAfter.src = state.resultURL;
@@ -88,6 +109,7 @@ async function handleFile(file) {
     const secs = ((performance.now() - t0) / 1000).toFixed(1);
     els.modelNote.textContent = `Processed 100% on this device · ${w}×${h}px · ${secs}s · nothing was uploaded.`;
   } catch (err) {
+    stopInferTimer();
     console.error(err);
     alert("Cutzy failed — check your connection on first run (the AI model downloads once), then try again.");
     els.progressCard.classList.add("hidden");

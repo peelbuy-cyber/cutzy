@@ -42,6 +42,8 @@ main{max-width:560px;margin:0 auto;padding:10px 14px;display:grid;gap:14px}
 
 .progress{height:10px;background:#0c0a16;border-radius:99px;overflow:hidden;margin:10px 0}
 .progress-bar{height:100%;width:0%;background:linear-gradient(90deg,var(--brand),var(--brand2));transition:width .2s}
+.progress-bar.working{width:100%;background:linear-gradient(90deg,var(--brand),var(--brand2),var(--brand));background-size:200% 100%;animation:procslide 1.2s linear infinite}
+@keyframes procslide{from{background-position:0% 0}to{background-position:200% 0}}
 .proc-label{font-weight:700;margin:0}
 .proc-note{color:var(--muted);font-size:13px;margin:8px 0 0}
 .fineprint{color:var(--muted);font-size:12px;text-align:center;margin:10px 0 0}
