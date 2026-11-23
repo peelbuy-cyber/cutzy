@@ -93,6 +93,74 @@ async function decodeImage(file) {
   }
 }
 
+/* Clean the AI's mask. The quantized model leaves coloured residue in the
+   background — pale patches of the original backdrop that read as dirt on a
+   white background. Fix: take the solid core of the mask (alpha > 192),
+   keep only the main subject (largest connected region, plus any region at
+   least a tenth its size), dilate that by 2px to recover the soft edge,
+   and zero everything else. The original alpha is kept inside the region,
+   so hair and soft edges survive; a 1px blur softens the cut. */
+function cleanMask(imgData, w, h) {
+  const d = imgData.data, n = w * h;
+  const origA = new Uint8Array(n);
+  for (let i = 0; i < n; i++) origA[i] = d[i * 4 + 3];
+  const core = new Uint8Array(n);
+  for (let i = 0; i < n; i++) core[i] = origA[i] > 192 ? 1 : 0;
+  // connected components of the core (union-find, 8-connectivity)
+  const parent = new Int32Array(n);
+  for (let i = 0; i < n; i++) parent[i] = i;
+  const find = (a) => { while (parent[a] !== a) { parent[a] = parent[parent[a]]; a = parent[a]; } return a; };
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = y * w + x;
+    if (!core[i]) continue;
+    if (x > 0 && core[i - 1]) { const a = find(i), b = find(i - 1); if (a !== b) parent[a] = b; }
+    if (y > 0) {
+      if (core[i - w]) { const a = find(i), b = find(i - w); if (a !== b) parent[a] = b; }
+      if (x > 0 && core[i - w - 1]) { const a = find(i), b = find(i - w - 1); if (a !== b) parent[a] = b; }
+      if (x < w - 1 && core[i - w + 1]) { const a = find(i), b = find(i - w + 1); if (a !== b) parent[a] = b; }
+    }
+  }
+  const size = new Map();
+  for (let i = 0; i < n; i++) if (core[i]) { const r = find(i); size.set(r, (size.get(r) || 0) + 1); }
+  let maxSize = 0;
+  for (const s of size.values()) if (s > maxSize) maxSize = s;
+  const keep = new Set();
+  for (const [r, s] of size) if (s >= maxSize * 0.1) keep.add(r);
+  // dilate the kept core by 2px (recovers the soft edge band)
+  const dil = new Uint8Array(n);
+  for (let i = 0; i < n; i++) {
+    if (!core[i] || !keep.has(find(i))) continue;
+    const y = (i / w) | 0, x = i % w;
+    for (let dy = -2; dy <= 2; dy++) { const yy = y + dy; if (yy < 0 || yy >= h) continue;
+      for (let dx = -2; dx <= 2; dx++) { const xx = x + dx; if (xx < 0 || xx >= w) continue;
+        dil[yy * w + xx] = 1; } }
+  }
+  // final alpha: original alpha inside the dilated region, 0 outside
+  const alpha = new Uint8Array(n);
+  for (let i = 0; i < n; i++) alpha[i] = dil[i] ? origA[i] : 0;
+  // 1px soft edge: 3x3 box blur on alpha
+  const blurred = new Uint8Array(n);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let sum = 0, cnt = 0;
+    for (let dy = -1; dy <= 1; dy++) { const yy = y + dy; if (yy < 0 || yy >= h) continue;
+      for (let dx = -1; dx <= 1; dx++) { const xx = x + dx; if (xx < 0 || xx >= w) continue;
+        sum += alpha[yy * w + xx]; cnt++; } }
+    blurred[y * w + x] = Math.round(sum / cnt);
+  }
+  for (let i = 0; i < n; i++) d[i * 4 + 3] = blurred[i];
+  return imgData;
+}
+
+async function cleanCutout(blob, w, h) {
+  const img = await createImageBitmap(blob);
+  const c = document.createElement("canvas"); c.width = w; c.height = h;
+  const x = c.getContext("2d"); x.drawImage(img, 0, 0);
+  const data = x.getImageData(0, 0, w, h);
+  cleanMask(data, w, h);
+  x.putImageData(data, 0, 0);
+  return new Promise((r) => c.toBlob(r, "image/png"));
+}
+
 /* ---------- main pipeline ---------- */
 async function handleFile(file) {
   if (!file.type.startsWith("image/")) { alert("Please choose an image file."); return; }
@@ -168,9 +236,11 @@ async function handleFile(file) {
         }
       },
     });
+    let cleaned = out;
+    try { cleaned = await cleanCutout(out, w, h); } catch { /* use the raw result */ }
     stopInferTimer();
-    state.resultBlob = out;
-    state.resultURL = URL.createObjectURL(out);
+    state.resultBlob = cleaned;
+    state.resultURL = URL.createObjectURL(cleaned);
     els.imgAfter.src = state.resultURL;
     els.imgAfter.onload = syncCompare;
     const secs = ((performance.now() - t0) / 1000).toFixed(1);
