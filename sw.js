@@ -1,9 +1,15 @@
-const CACHE = "cutzy-v3";
+const CACHE = "cutzy-v4";
 const ASSETS = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest",
   "./icons/icon.svg",
   "./demo/person-before.svg", "./demo/person-after.svg", "./demo/person-newbg.svg",
   "./demo/product-before.svg", "./demo/product-after.svg",
-  "./demo/pet-before.svg", "./demo/pet-after.svg"];
+  "./demo/pet-before.svg", "./demo/pet-after.svg",
+  "./demo/sneaker-before.svg", "./demo/sneaker-after.svg",
+  "./demo/car-before.svg", "./demo/car-after.svg",
+  "./demo/logo-before.svg", "./demo/logo-after.svg",
+  "./demo/boost-grid.svg",
+  "./gallery/product-newbg.svg", "./gallery/pet-newbg.svg", "./gallery/car-newbg.svg", "./gallery/logo-newbg.svg",
+  "./gallery/person-collage.svg", "./gallery/product-collage.svg", "./gallery/pet-collage.svg", "./gallery/car-collage.svg", "./gallery/logo-collage.svg"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));

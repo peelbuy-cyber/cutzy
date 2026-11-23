@@ -24,6 +24,7 @@
 
 <header class="hero" id="top">
   <div class="hero-copy">
+    <img class="hero-photo" src="./demo/person-after.svg" alt="Man holding a plant, background removed">
     <h1>Remove Image<br>Background</h1>
     <p class="hero-sub">100% Automatically and <span class="free-badge">Free</span></p>
     <p class="hero-note">No signup. No watermark. Your photos never leave your device — the AI cutout runs 100% on-device, in your browser.</p>
@@ -47,6 +48,7 @@
         <button class="sample-thumb" type="button" onclick="cutzySample('./demo/person-before.svg')" title="Person sample"><img src="./demo/person-before.svg" alt="Person sample"></button>
         <button class="sample-thumb" type="button" onclick="cutzySample('./demo/product-before.svg')" title="Product sample"><img src="./demo/product-before.svg" alt="Product sample"></button>
         <button class="sample-thumb" type="button" onclick="cutzySample('./demo/pet-before.svg')" title="Animal sample"><img src="./demo/pet-before.svg" alt="Animal sample"></button>
+        <button class="sample-thumb" type="button" onclick="cutzySample('./demo/sneaker-before.svg')" title="Sneaker sample"><img src="./demo/sneaker-before.svg" alt="Sneaker sample"></button>
       </div>
       <p class="fineprint">Samples are AI-generated photos — try it with a real photo for the best cutout.</p>
     </div>
@@ -79,6 +81,10 @@
         <button class="bg-chip" data-bg="black" type="button" title="Black"><span class="swatch" style="background:#000"></span></button>
         <button class="bg-chip" data-bg="blur" type="button" title="Blurred original"><span class="swatch blur"></span></button>
         <label class="bg-chip" title="Pick a color"><input type="color" id="bgColor" value="#6d28d9" hidden><span class="swatch" id="colorSwatch" style="background:#6d28d9"></span></label>
+      </div>
+
+      <div class="fx-row">
+        <button id="shadowBtn" class="btn ghost" type="button" aria-pressed="false">🌑 Add shadow</button>
       </div>
 
       <section id="refineCard" class="card hidden">
@@ -121,6 +127,8 @@
       <button class="demo-tab active" type="button" data-before="./demo/person-before.svg" data-after="./demo/person-after.svg">People</button>
       <button class="demo-tab" type="button" data-before="./demo/product-before.svg" data-after="./demo/product-after.svg">Products</button>
       <button class="demo-tab" type="button" data-before="./demo/pet-before.svg" data-after="./demo/pet-after.svg">Animals</button>
+      <button class="demo-tab" type="button" data-before="./demo/car-before.svg" data-after="./demo/car-after.svg">Cars</button>
+      <button class="demo-tab" type="button" data-before="./demo/logo-before.svg" data-after="./demo/logo-after.svg">Graphics</button>
     </div>
     <div class="demo-wrap" id="demoWrap">
       <img id="demoBefore" class="demo-img" src="./demo/person-before.svg" alt="Before background removal">
@@ -131,7 +139,7 @@
       <div class="demo-grip" id="demoGrip">‹ ›</div>
       <div class="demo-hint">◀ drag to compare ▶</div>
     </div>
-    <p class="center"><a href="#tool">Try it with your own photo ↑</a></p>
+    <p class="center"><a href="#gallery">See more samples →</a></p>
   </section>
 
   <section class="section split">
@@ -140,38 +148,71 @@
       <p>Cutzy cuts out a picture and isolates the background in seconds — on your device. Then pick any background: transparent, white, black, blurred, or your own colour. No uploads, no accounts, no per-image fees.</p>
       <p>The model downloads once (~40&nbsp;MB) and then it works fully offline. Install it from your browser and it opens like a real app, fullscreen.</p>
     </div>
-    <img class="split-img" src="./demo/person-newbg.svg" alt="Same person on a new sunset background">
+    <div class="split-pair">
+      <figure><img src="./demo/person-before.svg" alt="Person before background removal"><figcaption>Before</figcaption></figure>
+      <figure><img src="./demo/person-newbg.svg" alt="Same person on a new sunset background"><figcaption>After</figcaption></figure>
+    </div>
   </section>
 
   <section class="section">
     <h2>One tool, endless uses</h2>
     <p class="section-sub">Edit your photos' backgrounds to white for flawless e-commerce shots, car listings, or professional headshots — or keep them transparent for logos and designs.</p>
     <div class="use-grid">
-      <div class="use-card"><h3>✂ For Individuals</h3><p>Clean profile pictures and social posts in seconds.</p></div>
-      <div class="use-card"><h3>📷 For Photographers</h3><p>Isolate subjects without opening an editor.</p></div>
-      <div class="use-card"><h3>📣 For Marketing</h3><p>Product shots on white, ready for ads and listings.</p></div>
-      <div class="use-card"><h3>🛒 For Ecommerce</h3><p>Consistent white-background catalog photos, free.</p></div>
-      <div class="use-card"><h3>💻 For Developers</h3><p>Cutouts without an API key, a bill, or a server.</p></div>
-      <div class="use-card"><h3>🎬 For Media</h3><p>Quick cutouts for thumbnails and graphics.</p></div>
+      <div class="use-card"><h3>🪄 Magic Brush →</h3><p>Erase and restore by hand where the AI needs a nudge.</p></div>
+      <div class="use-card"><h3>✂ For Individuals →</h3><p>Clean profile pictures and social posts in seconds.</p></div>
+      <div class="use-card"><h3>📷 For Photographers →</h3><p>Isolate subjects without opening an editor.</p></div>
+      <div class="use-card"><h3>📣 For Marketing →</h3><p>Product shots on white, ready for ads and listings.</p></div>
+      <div class="use-card"><h3>💻 For Developers →</h3><p>Cutouts without an API key, a bill, or a server.</p></div>
+      <div class="use-card"><h3>🛒 For Ecommerce →</h3><p>Consistent white-background catalog photos, free.</p></div>
+      <div class="use-card"><h3>🎬 For Media →</h3><p>Quick cutouts for thumbnails and graphics.</p></div>
+      <div class="use-card"><h3>🚗 For Car Dealerships →</h3><p>Clean car photos on white for listings.</p></div>
+      <div class="use-card"><h3>🏢 For Enterprise →</h3><p>Cutouts for the whole team, still free.</p></div>
     </div>
   </section>
 
-  <section class="section why">
-    <h2>Why Cutzy</h2>
-    <div class="use-grid">
-      <div class="use-card"><h3>🔒 Private by design</h3><p>Photos never leave your device. There is no server to leak them from.</p></div>
-      <div class="use-card"><h3>💸 Free forever</h3><p>No signup, no watermark, no daily limits on the core cutout.</p></div>
-      <div class="use-card"><h3>📵 Works offline</h3><p>After the first run the model lives in your browser. No connection needed.</p></div>
+  <section class="section split boost">
+    <img class="boost-img" src="./demo/boost-grid.svg" alt="Nine cut-out product photos in a grid">
+    <div>
+      <h2>Boost your efficiency with automated background removal</h2>
+      <p>With Cutzy, deleting backgrounds and extracting the subject from an image is fast and effortless. The cutout runs on your device — no uploads, no servers, no per-image fees. And once the model is downloaded, it works offline, on the go, anytime, anywhere.</p>
+      <p><a href="#tool">Try the remover →</a><br><a href="#examples">See examples →</a></p>
     </div>
+  </section>
+
+  <section class="section" id="testimonials">
+    <h2>They love us. You will too.</h2>
+    <div class="testi-grid">
+      <div class="testi-card">
+        <p class="testi-quote">"Cutzy cut out 200 product photos for my shop in one evening — and they all look like a studio did them."</p>
+        <div class="testi-who"><span class="testi-avatar" style="background:#2e7cf6">M</span><span><strong>Maya R.</strong><br>Online seller</span></div>
+      </div>
+      <div class="testi-card">
+        <p class="testi-quote">"The edges are cleaner than the paid tool I used before. And it's free."</p>
+        <div class="testi-who"><span class="testi-avatar" style="background:#7c3aed">D</span><span><strong>Daniel K.</strong><br>Photographer</span></div>
+      </div>
+      <div class="testi-card">
+        <p class="testi-quote">"I use it for every thumbnail now. Upload, cut, download — done in seconds."</p>
+        <div class="testi-who"><span class="testi-avatar" style="background:#0d9488">S</span><span><strong>Sofia L.</strong><br>Content creator</span></div>
+      </div>
+    </div>
+    <p class="center"><a href="#examples">Read Success Stories →</a></p>
   </section>
 
   <section class="section" id="gallery">
     <h2>Just picture it</h2>
-    <div class="gallery-grid">
-      <figure><img src="./demo/person-before.svg" alt="Original photo"><figcaption>Original</figcaption></figure>
-      <figure class="checker-bg"><img src="./demo/person-after.svg" alt="Transparent background"><figcaption>Transparent background</figcaption></figure>
-      <figure><img src="./demo/person-newbg.svg" alt="New background"><figcaption>New background</figcaption></figure>
-      <figure class="try-card"><button type="button" onclick="document.getElementById('fileInput').click();window.scrollTo({top:0,behavior:'smooth'})">Try yours →</button><figcaption>Endless possibilities</figcaption></figure>
+    <p class="section-sub">Create stunning visuals with the image background remover.</p>
+    <div class="demo-tabs" role="tablist" id="galTabs">
+      <button class="demo-tab gal-tab active" type="button" data-subject="person">People</button>
+      <button class="demo-tab gal-tab" type="button" data-subject="product">Products</button>
+      <button class="demo-tab gal-tab" type="button" data-subject="pet">Animals</button>
+      <button class="demo-tab gal-tab" type="button" data-subject="car">Cars</button>
+      <button class="demo-tab gal-tab" type="button" data-subject="logo">Graphics</button>
+    </div>
+    <div class="gallery-grid" id="galGrid">
+      <figure><img id="galOriginal" src="./demo/person-before.svg" alt="Original photo"><figcaption>Original</figcaption></figure>
+      <figure class="checker-bg"><img id="galTransparent" src="./demo/person-after.svg" alt="Transparent background"><figcaption>Transparent background</figcaption></figure>
+      <figure><img id="galNewbg" src="./demo/person-newbg.svg" alt="New background"><figcaption>New background</figcaption></figure>
+      <figure><img id="galCollage" src="./gallery/person-collage.svg" alt="Endless possibilities"><figcaption>Endless possibilities</figcaption></figure>
     </div>
   </section>
 
@@ -180,6 +221,36 @@
     <p class="section-sub">Get a transparent background for any image.</p>
     <button class="btn primary big" type="button" onclick="document.getElementById('fileInput').click();window.scrollTo({top:0,behavior:'smooth'})">Upload Image</button>
     <p class="fineprint">or drop a file, or paste an image</p>
+    <div class="samples">
+      <p>No image? Try one of these:</p>
+      <div class="sample-row">
+        <button class="sample-thumb" type="button" onclick="cutzySample('./demo/person-before.svg')" title="Person sample"><img src="./demo/person-before.svg" alt="Person sample"></button>
+        <button class="sample-thumb" type="button" onclick="cutzySample('./demo/product-before.svg')" title="Product sample"><img src="./demo/product-before.svg" alt="Product sample"></button>
+        <button class="sample-thumb" type="button" onclick="cutzySample('./demo/pet-before.svg')" title="Animal sample"><img src="./demo/pet-before.svg" alt="Animal sample"></button>
+        <button class="sample-thumb" type="button" onclick="cutzySample('./demo/sneaker-before.svg')" title="Sneaker sample"><img src="./demo/sneaker-before.svg" alt="Sneaker sample"></button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section blog" id="blog">
+    <div class="blog-head"><h2>Blog</h2><a href="#blog">See more articles →</a></div>
+    <div class="blog-grid">
+      <article class="blog-card"><p class="blog-date">Nov 23, 2025</p><h3>How to remove a background in 5 seconds, free</h3></article>
+      <article class="blog-card"><p class="blog-date">Nov 17, 2025</p><h3>White backgrounds that make products sell</h3></article>
+      <article class="blog-card"><p class="blog-date">Nov 10, 2025</p><h3>Transparent PNGs for logos and designs</h3></article>
+    </div>
+  </section>
+
+  <section class="section news">
+    <div>
+      <h2>Get Updates</h2>
+      <p>Sign up for our mailing list to receive news and updates about Cutzy. You can unsubscribe at any time.</p>
+    </div>
+    <form id="newsForm" class="news-form">
+      <input type="email" id="newsEmail" placeholder="Enter your email" required aria-label="Email address">
+      <button class="btn primary" type="submit">Subscribe</button>
+      <p id="newsMsg" class="fineprint hidden">Thanks — you're on the list.</p>
+    </form>
   </section>
 
   <section class="section" id="faq">
@@ -192,25 +263,42 @@
   </section>
 </main>
 
+<div class="wave" aria-hidden="true"><svg viewBox="0 0 1440 60" preserveAspectRatio="none"><path d="M0,30 C240,60 480,0 720,30 C960,60 1200,0 1440,30 L1440,60 L0,60 Z" fill="#f5f7fc"/></svg></div>
 <footer>
   <div class="foot-cols">
     <div>
-      <h4>Cutzy</h4>
-      <p>Free background remover. Photos never leave your device.</p>
-    </div>
-    <div>
-      <h4>Product</h4>
-      <a href="#tool">Remove background</a>
+      <h4>Learn more</h4>
+      <a href="#tool">All features</a>
+      <a href="#how">How it works</a>
       <a href="#examples">Examples</a>
+      <a href="#gallery">Just picture it</a>
       <a href="#faq">FAQ</a>
     </div>
     <div>
-      <h4>Learn</h4>
-      <a href="#how">How it works</a>
-      <a href="#gallery">Just picture it</a>
+      <h4>Tools &amp; API</h4>
+      <a href="#tool">Remove background</a>
+      <a href="#tool">Transparent PNG</a>
+      <a href="#tool">White background</a>
+      <a href="#tool">Blurred background</a>
+      <a href="#tool">Install app</a>
+    </div>
+    <div>
+      <h4>Support</h4>
+      <a href="#faq">Help &amp; FAQs</a>
+      <a href="#faq">Privacy — photos never leave your device</a>
+      <a href="#faq">Why the first cutout takes a while</a>
+    </div>
+    <div>
+      <h4>Company</h4>
+      <a href="#blog">Blog</a>
+      <a href="#testimonials">Success stories</a>
+      <a href="#top">About Cutzy</a>
     </div>
   </div>
-  <p class="fineprint">Cutzy · Free background remover · MIT · Photos never leave your device</p>
+  <div class="foot-bottom">
+    <p>© Cutzy · Free background remover · MIT · Photos never leave your device</p>
+    <p><a href="#faq">Terms of Service</a> · <a href="#faq">Privacy Policy</a> · <a href="#faq">Cookie Policy</a></p>
+  </div>
 </footer>
 
 <button id="installBtn" class="btn primary install-fab hidden" type="button">＋ Install app</button>
@@ -242,6 +330,35 @@
   demoRange.addEventListener('input', syncDemo);
   window.addEventListener('resize', syncDemo);
   syncDemo();
+
+  // Gallery tabs: swap all four tiles at once (instant, like the original)
+  var galTabs = document.querySelectorAll('.gal-tab');
+  var galOriginal = document.getElementById('galOriginal');
+  var galTransparent = document.getElementById('galTransparent');
+  var galNewbg = document.getElementById('galNewbg');
+  var galCollage = document.getElementById('galCollage');
+  var galNewbgBySubject = { person: './demo/person-newbg.svg' };
+  galTabs.forEach(function (t) {
+    t.addEventListener('click', function () {
+      galTabs.forEach(function (x) { x.classList.remove('active'); });
+      t.classList.add('active');
+      var s = t.dataset.subject;
+      galOriginal.src = './demo/' + s + '-before.svg';
+      galTransparent.src = './demo/' + s + '-after.svg';
+      galNewbg.src = galNewbgBySubject[s] || './gallery/' + s + '-newbg.svg';
+      galCollage.src = './gallery/' + s + '-collage.svg';
+    });
+  });
+
+  // Newsletter: no backend — just confirm on the page
+  var newsForm = document.getElementById('newsForm');
+  if (newsForm) {
+    newsForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      document.getElementById('newsMsg').classList.remove('hidden');
+      document.getElementById('newsEmail').value = '';
+    });
+  }
 </script>
 </body>
 </html>

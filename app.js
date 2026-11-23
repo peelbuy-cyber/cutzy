@@ -11,6 +11,7 @@ const els = {
   afterLayer: $("afterLayer"), compareRange: $("compareRange"), compareWrap: document.querySelector(".compare-wrap"),
   compareGrip: $("compareGrip"),
   bgChips: [...document.querySelectorAll(".bg-chip")], bgColor: $("bgColor"), colorSwatch: $("colorSwatch"),
+  shadowBtn: $("shadowBtn"),
   downloadBtn: $("downloadBtn"), shareBtn: $("shareBtn"), refineBtn: $("refineBtn"), newBtn: $("newBtn"),
   modelNote: $("modelNote"), installBtn: $("installBtn"), procNote: document.querySelector("#progressCard .proc-note"),
   refineCard: $("refineCard"), refineCanvas: $("refineCanvas"),
@@ -20,7 +21,7 @@ const els = {
   compareStage: document.querySelector(".compare-wrap"), bgRow: document.querySelector(".bg-row"), actionsRow: document.querySelector(".actions"),
 };
 
-const state = { origURL: null, origBitmap: null, resultURL: null, resultBlob: null, bg: "checker", color: "#6d28d9", w: 0, h: 0 };
+const state = { origURL: null, origBitmap: null, resultURL: null, resultBlob: null, bg: "checker", color: "#6d28d9", w: 0, h: 0, shadow: false };
 
 /* ---------- PWA: service worker + install prompt ---------- */
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
@@ -129,7 +130,10 @@ function setProgress(pct, label) {
 }
 function resetUI() {
   ["origURL", "resultURL"].forEach((k) => state[k] && URL.revokeObjectURL(state[k]));
-  Object.assign(state, { origURL: null, resultURL: null, resultBlob: null });
+  Object.assign(state, { origURL: null, resultURL: null, resultBlob: null, shadow: false });
+  els.imgAfter.style.filter = "";
+  els.shadowBtn.classList.remove("active");
+  els.shadowBtn.setAttribute("aria-pressed", "false");
   els.resultCard.classList.add("hidden");
 }
 
@@ -151,6 +155,14 @@ els.bgChips.forEach((chip) => chip.addEventListener("click", () => {
   paintPreviewBg();
 }));
 els.bgColor.addEventListener("input", (e) => { state.color = e.target.value; els.colorSwatch.style.background = state.color; paintPreviewBg(); });
+
+/* ---------- shadow effect (preview + download) ---------- */
+els.shadowBtn.addEventListener("click", () => {
+  state.shadow = !state.shadow;
+  els.imgAfter.style.filter = state.shadow ? "drop-shadow(0 14px 18px rgba(0,0,0,.35))" : "";
+  els.shadowBtn.classList.toggle("active", state.shadow);
+  els.shadowBtn.setAttribute("aria-pressed", String(state.shadow));
+});
 
 function paintPreviewBg() {
   // Preview: checkerboard shows transparency; other modes tint the preview layer.
@@ -179,7 +191,14 @@ async function compositeCanvas(scaleTo = null) {
     x.filter = "blur(30px) brightness(0.9)"; x.drawImage(state.origBitmap, -W * 0.1, -H * 0.1, W * 1.2, H * 1.2); x.filter = "none";
   }
   const img = await createImageBitmap(state.resultBlob);
-  x.drawImage(img, 0, 0, W, H);
+  if (state.shadow) {
+    x.save();
+    x.shadowColor = "rgba(0,0,0,.35)"; x.shadowBlur = Math.round(W * 0.02); x.shadowOffsetY = Math.round(H * 0.012);
+    x.drawImage(img, 0, 0, W, H);
+    x.restore();
+  } else {
+    x.drawImage(img, 0, 0, W, H);
+  }
   return c;
 }
 
