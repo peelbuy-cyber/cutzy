@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1200"><defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fb2e5"/><stop offset="1" stop-color="#e8f2fb"/></linearGradient></defs><rect width="900" height="1200" fill="url(#sky)"/><circle cx="720" cy="180" r="70" fill="#ffd964"/><polygon points="0,880 300,720 600,860 900,740 900,1200 0,1200" fill="#5a9a5a"/><rect y="960" width="900" height="240" fill="#3f7a3f"/>
+<circle cx="450" cy="300" r="130" fill="#d2a982"/>
+<path d="M320,300 a130,130 0 0 1 260,0 l0,-20 a130,110 0 0 0 -260,0 z" fill="#3a2a1a"/>
+<rect x="210" y="480" width="80" height="380" rx="40" fill="#b42828"/>
+<rect x="610" y="480" width="80" height="380" rx="40" fill="#b42828"/>
+<rect x="300" y="460" width="300" height="430" rx="60" fill="#b42828"/>
+<rect x="310" y="880" width="110" height="270" rx="40" fill="#1e2a5a"/>
+<rect x="480" y="880" width="110" height="270" rx="40" fill="#1e2a5a"/>
+<ellipse cx="365" cy="1160" rx="70" ry="25" fill="#222222"/>
+<ellipse cx="535" cy="1160" rx="70" ry="25" fill="#222222"/>
+
+</svg>

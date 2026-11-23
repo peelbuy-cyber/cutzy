@@ -5,95 +5,239 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Cutzy — Free Background Remover, No Signup, No Watermark</title>
 <meta name="description" content="Remove image backgrounds free, on your phone. No signup, no watermark, photos never leave your device.">
-<meta name="theme-color" content="#6d28d9">
+<meta name="theme-color" content="#ffffff">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
 <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-<header class="topbar">
-  <div class="logo"><span class="logo-mark">✂</span> Cutzy</div>
-  <div class="tagline">free · no signup · no watermark · private</div>
+<nav class="nav">
+  <a class="nav-logo" href="#top"><span class="logo-mark">✂</span> Cutzy</a>
+  <div class="nav-links">
+    <a href="#tool">Remove background</a>
+    <a href="#examples">Examples</a>
+    <a href="#how">How it works</a>
+    <a href="#faq">FAQ</a>
+  </div>
+  <button class="btn primary nav-cta" type="button" onclick="document.getElementById('fileInput').click()">Upload image</button>
+</nav>
+
+<header class="hero" id="top">
+  <div class="hero-copy">
+    <h1>Remove Image<br>Background</h1>
+    <p class="hero-sub">100% Automatically and <span class="free-badge">Free</span></p>
+    <p class="hero-note">No signup. No watermark. Your photos never leave your device — the AI cutout runs 100% on-device, in your browser.</p>
+    <ul class="hero-points">
+      <li>✓ Free forever</li>
+      <li>✓ Works offline after first run</li>
+      <li>✓ Private by design</li>
+    </ul>
+  </div>
+  <div class="card hero-card" id="tool">
+    <section id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Choose a photo">
+      <span class="btn primary big">Upload Image</span>
+      <p class="dz-sub">or drop a file, or paste an image</p>
+      <input type="file" id="fileInput" accept="image/*" hidden>
+      <button id="cameraBtn" class="btn ghost" type="button">📷 Use camera</button>
+      <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
+    </section>
+    <div class="samples">
+      <p>No image? Try one of these:</p>
+      <div class="sample-row">
+        <button class="sample-thumb" type="button" onclick="cutzySample('./demo/person-before.svg')" title="Person sample"><img src="./demo/person-before.svg" alt="Person sample"></button>
+        <button class="sample-thumb" type="button" onclick="cutzySample('./demo/product-before.svg')" title="Product sample"><img src="./demo/product-before.svg" alt="Product sample"></button>
+        <button class="sample-thumb" type="button" onclick="cutzySample('./demo/pet-before.svg')" title="Animal sample"><img src="./demo/pet-before.svg" alt="Animal sample"></button>
+      </div>
+      <p class="fineprint">Samples are illustrations — try it with a real photo for the best cutout.</p>
+    </div>
+  </div>
 </header>
 
 <main>
-  <!-- STEP 1: pick a photo -->
-  <section id="dropzone" class="card dropzone" tabindex="0" role="button" aria-label="Choose a photo">
-    <div class="dz-art">🖼️</div>
-    <p class="dz-title">Tap to choose a photo</p>
-    <p class="dz-sub">or drop / paste an image here · works offline after first load</p>
-    <input type="file" id="fileInput" accept="image/*" hidden>
-    <button id="cameraBtn" class="btn ghost" type="button">📷 Use camera</button>
-    <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
-  </section>
-
-  <!-- STEP 2: processing -->
-  <section id="progressCard" class="card hidden">
-    <p class="proc-label">Loading image… <span id="procPct">0%</span></p>
-    <div class="progress"><div id="procBar" class="progress-bar"></div></div>
-    <p class="proc-note">First run downloads the AI model once (~40&nbsp;MB). After that it works fully offline and your photos never leave this phone.</p>
-  </section>
-
-  <!-- STEP 3: result -->
-  <section id="resultCard" class="card hidden">
-    <div class="compare-wrap">
-      <img id="imgBefore" class="compare-img" alt="Original photo">
-      <div id="afterLayer" class="compare-after">
-        <img id="imgAfter" class="compare-img" alt="Background removed">
-      </div>
-      <input id="compareRange" type="range" min="0" max="100" value="50" aria-label="Before after slider">
-      <div class="compare-hint">◀ drag to compare ▶</div>
-    </div>
-
-    <div class="bg-row" role="group" aria-label="Background">
-      <button class="bg-chip active" data-bg="checker" type="button" title="Transparent"><span class="swatch checker"></span></button>
-      <button class="bg-chip" data-bg="white" type="button" title="White"><span class="swatch" style="background:#fff"></span></button>
-      <button class="bg-chip" data-bg="black" type="button" title="Black"><span class="swatch" style="background:#000"></span></button>
-      <button class="bg-chip" data-bg="blur" type="button" title="Blurred original"><span class="swatch blur"></span></button>
-      <label class="bg-chip" title="Pick a color"><input type="color" id="bgColor" value="#6d28d9" hidden><span class="swatch" id="colorSwatch" style="background:#6d28d9"></span></label>
-    </div>
-
-    <!-- manual edge touch-up -->
-    <section id="refineCard" class="card hidden">
-      <div class="refine-stage"><canvas id="refineCanvas"></canvas></div>
-      <div class="refine-tools">
-        <div class="refine-modes" role="group" aria-label="Brush mode">
-          <button id="eraseMode" class="btn mode active" type="button">🧽 Erase</button>
-          <button id="keepMode" class="btn mode" type="button">🖌 Restore</button>
-        </div>
-        <label class="refine-size">Brush <input id="brushSize" type="range" min="8" max="140" value="32"> <span id="brushSizeVal">32px</span></label>
-        <div class="refine-actions">
-          <button id="undoStroke" class="btn ghost" type="button">↩ Undo</button>
-          <button id="refineDone" class="btn primary" type="button">✓ Done</button>
-          <button id="refineCancel" class="btn ghost" type="button">✕ Cancel</button>
-        </div>
-      </div>
-      <p class="fineprint">Paint over edges the AI missed — hair, fur, glass. Restore brings back the original photo underneath. All on-device.</p>
+  <!-- tool status cards: results appear here, right under the hero -->
+  <div class="tool-wrap">
+    <section id="progressCard" class="card hidden">
+      <p class="proc-label">Loading image… <span id="procPct">0%</span></p>
+      <div class="progress"><div id="procBar" class="progress-bar"></div></div>
+      <p class="proc-note">First run downloads the AI model once (~40&nbsp;MB). After that it works fully offline and your photos never leave this phone.</p>
     </section>
 
-    <div class="actions">
-      <button id="downloadBtn" class="btn primary" type="button">⬇ Download PNG</button>
-      <button id="shareBtn" class="btn" type="button">📤 Share before/after</button>
-      <button id="refineBtn" class="btn" type="button">🖌 Refine edges</button>
-      <button id="newBtn" class="btn ghost" type="button">↺ New photo</button>
-    </div>
-    <p id="modelNote" class="fineprint"></p>
+    <section id="resultCard" class="card hidden">
+      <div class="compare-wrap">
+        <img id="imgBefore" class="compare-img" alt="Original photo">
+        <div id="afterLayer" class="compare-after">
+          <img id="imgAfter" class="compare-img" alt="Background removed">
+        </div>
+        <input id="compareRange" type="range" min="0" max="100" value="50" aria-label="Before after slider">
+        <div class="compare-hint">◀ drag to compare ▶</div>
+      </div>
+
+      <div class="bg-row" role="group" aria-label="Background">
+        <button class="bg-chip active" data-bg="checker" type="button" title="Transparent"><span class="swatch checker"></span></button>
+        <button class="bg-chip" data-bg="white" type="button" title="White"><span class="swatch" style="background:#fff"></span></button>
+        <button class="bg-chip" data-bg="black" type="button" title="Black"><span class="swatch" style="background:#000"></span></button>
+        <button class="bg-chip" data-bg="blur" type="button" title="Blurred original"><span class="swatch blur"></span></button>
+        <label class="bg-chip" title="Pick a color"><input type="color" id="bgColor" value="#6d28d9" hidden><span class="swatch" id="colorSwatch" style="background:#6d28d9"></span></label>
+      </div>
+
+      <section id="refineCard" class="card hidden">
+        <div class="refine-stage"><canvas id="refineCanvas"></canvas></div>
+        <div class="refine-tools">
+          <div class="refine-modes" role="group" aria-label="Brush mode">
+            <button id="eraseMode" class="btn mode active" type="button">🧽 Erase</button>
+            <button id="keepMode" class="btn mode" type="button">🖌 Restore</button>
+          </div>
+          <label class="refine-size">Brush <input id="brushSize" type="range" min="8" max="140" value="32"> <span id="brushSizeVal">32px</span></label>
+          <div class="refine-actions">
+            <button id="undoStroke" class="btn ghost" type="button">↩ Undo</button>
+            <button id="refineDone" class="btn primary" type="button">✓ Done</button>
+            <button id="refineCancel" class="btn ghost" type="button">✕ Cancel</button>
+          </div>
+        </div>
+        <p class="fineprint">Paint over edges the AI missed — hair, fur, glass. Restore brings back the original photo underneath. All on-device.</p>
+      </section>
+
+      <div class="actions">
+        <button id="downloadBtn" class="btn primary" type="button">⬇ Download PNG</button>
+        <button id="shareBtn" class="btn" type="button">📤 Share before/after</button>
+        <button id="refineBtn" class="btn" type="button">🖌 Refine edges</button>
+        <button id="newBtn" class="btn ghost" type="button">↺ New photo</button>
+      </div>
+      <p id="modelNote" class="fineprint"></p>
+    </section>
+  </div>
+
+  <section class="section steps" id="how">
+    <div class="step"><span class="step-n">1</span><h3>Upload a photo</h3><p>Tap, drop, paste, or use your camera.</p></div>
+    <div class="step"><span class="step-n">2</span><h3>AI removes the background</h3><p>On your device — no uploads, no servers, no API bills.</p></div>
+    <div class="step"><span class="step-n">3</span><h3>Download the PNG</h3><p>Transparent, white, black, or blurred — free, no watermark.</p></div>
   </section>
 
-  <section class="card how">
-    <h2>How it works</h2>
-    <ol>
-      <li><b>100% on-device.</b> The AI cutout runs in your browser — no uploads, no servers, no API bills.</li>
-      <li><b>Free forever.</b> No signup, no watermark, no daily limits on the core cutout.</li>
-      <li><b>Install it.</b> Use your browser's "Add to Home screen" — it opens like a real app, fullscreen.</li>
-    </ol>
+  <section class="section" id="examples">
+    <h2>Stunning quality</h2>
+    <p class="section-sub">Drag the slider to compare. The cutout runs on your device, not on a server.</p>
+    <div class="demo-tabs" role="tablist">
+      <button class="demo-tab active" type="button" data-before="./demo/person-before.svg" data-after="./demo/person-after.svg">People</button>
+      <button class="demo-tab" type="button" data-before="./demo/product-before.svg" data-after="./demo/product-after.svg">Products</button>
+      <button class="demo-tab" type="button" data-before="./demo/pet-before.svg" data-after="./demo/pet-after.svg">Animals</button>
+    </div>
+    <div class="demo-wrap" id="demoWrap">
+      <img id="demoBefore" class="demo-img" src="./demo/person-before.svg" alt="Before background removal">
+      <div id="demoAfterLayer" class="demo-after">
+        <img id="demoAfter" class="demo-img" src="./demo/person-after.svg" alt="After background removal">
+      </div>
+      <input id="demoRange" type="range" min="0" max="100" value="50" aria-label="Before after slider">
+      <div class="demo-hint">◀ drag to compare ▶</div>
+    </div>
+    <p class="center"><a href="#tool">Try it with your own photo ↑</a></p>
+  </section>
+
+  <section class="section split">
+    <div>
+      <h2>All-in-one AI background remover</h2>
+      <p>Cutzy cuts out a picture and isolates the background in seconds — on your device. Then pick any background: transparent, white, black, blurred, or your own colour. No uploads, no accounts, no per-image fees.</p>
+      <p>The model downloads once (~40&nbsp;MB) and then it works fully offline. Install it from your browser and it opens like a real app, fullscreen.</p>
+    </div>
+    <img class="split-img" src="./demo/person-newbg.svg" alt="Same person on a new sunset background">
+  </section>
+
+  <section class="section">
+    <h2>One tool, endless uses</h2>
+    <p class="section-sub">Edit your photos' backgrounds to white for flawless e-commerce shots, car listings, or professional headshots — or keep them transparent for logos and designs.</p>
+    <div class="use-grid">
+      <div class="use-card"><h3>✂ For Individuals</h3><p>Clean profile pictures and social posts in seconds.</p></div>
+      <div class="use-card"><h3>📷 For Photographers</h3><p>Isolate subjects without opening an editor.</p></div>
+      <div class="use-card"><h3>📣 For Marketing</h3><p>Product shots on white, ready for ads and listings.</p></div>
+      <div class="use-card"><h3>🛒 For Ecommerce</h3><p>Consistent white-background catalog photos, free.</p></div>
+      <div class="use-card"><h3>💻 For Developers</h3><p>Cutouts without an API key, a bill, or a server.</p></div>
+      <div class="use-card"><h3>🎬 For Media</h3><p>Quick cutouts for thumbnails and graphics.</p></div>
+    </div>
+  </section>
+
+  <section class="section why">
+    <h2>Why Cutzy</h2>
+    <div class="use-grid">
+      <div class="use-card"><h3>🔒 Private by design</h3><p>Photos never leave your device. There is no server to leak them from.</p></div>
+      <div class="use-card"><h3>💸 Free forever</h3><p>No signup, no watermark, no daily limits on the core cutout.</p></div>
+      <div class="use-card"><h3>📵 Works offline</h3><p>After the first run the model lives in your browser. No connection needed.</p></div>
+    </div>
+  </section>
+
+  <section class="section" id="gallery">
+    <h2>Just picture it</h2>
+    <div class="gallery-grid">
+      <figure><img src="./demo/person-before.svg" alt="Original photo"><figcaption>Original</figcaption></figure>
+      <figure class="checker-bg"><img src="./demo/person-after.svg" alt="Transparent background"><figcaption>Transparent background</figcaption></figure>
+      <figure><img src="./demo/person-newbg.svg" alt="New background"><figcaption>New background</figcaption></figure>
+      <figure class="try-card"><button type="button" onclick="document.getElementById('fileInput').click();window.scrollTo({top:0,behavior:'smooth'})">Try yours →</button><figcaption>Endless possibilities</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="section cta">
+    <h2>Remove Image Background</h2>
+    <p class="section-sub">Get a transparent background for any image.</p>
+    <button class="btn primary big" type="button" onclick="document.getElementById('fileInput').click();window.scrollTo({top:0,behavior:'smooth'})">Upload Image</button>
+    <p class="fineprint">or drop a file, or paste an image</p>
+  </section>
+
+  <section class="section" id="faq">
+    <h2>FAQ</h2>
+    <details><summary>Is Cutzy really free?</summary><p>Yes. The core cutout is free forever — no signup, no watermark, no daily limits. It runs on your device, so there is no server bill to pass on to you.</p></details>
+    <details><summary>Do my photos get uploaded anywhere?</summary><p>No. The AI model downloads once to your browser (~40&nbsp;MB) and every cutout happens on your device. Your photos never leave your phone or computer.</p></details>
+    <details><summary>Why does the first cutout take a while?</summary><p>The first run downloads the AI model once. After that it is cached and cutouts start instantly. Big photos can still take a minute or two on slower devices — the progress bar shows a live timer while it works.</p></details>
+    <details><summary>What happens to my photo after I close the page?</summary><p>Nothing is stored. Your photo lives only in your browser tab while you use it.</p></details>
+    <details><summary>Can I use the cutout commercially?</summary><p>Yes — your photos are yours, and the cutouts you make with them are yours to use, including for listings and ads. The tool itself is MIT-licensed.</p></details>
   </section>
 </main>
 
-<footer class="fineprint">Cutzy · Free background remover · MIT · Photos never leave your device</footer>
+<footer>
+  <div class="foot-cols">
+    <div>
+      <h4>Cutzy</h4>
+      <p>Free background remover. Photos never leave your device.</p>
+    </div>
+    <div>
+      <h4>Product</h4>
+      <a href="#tool">Remove background</a>
+      <a href="#examples">Examples</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <div>
+      <h4>Learn</h4>
+      <a href="#how">How it works</a>
+      <a href="#gallery">Just picture it</a>
+    </div>
+  </div>
+  <p class="fineprint">Cutzy · Free background remover · MIT · Photos never leave your device</p>
+</footer>
 
 <button id="installBtn" class="btn primary install-fab hidden" type="button">＋ Install app</button>
 
 <script type="module" src="./app.js"></script>
+<script>
+  // Demo tabs + before/after slider (landing only; the tool has its own compare slider)
+  var demoTabs = document.querySelectorAll('.demo-tab');
+  var demoBefore = document.getElementById('demoBefore');
+  var demoAfter = document.getElementById('demoAfter');
+  var demoLayer = document.getElementById('demoAfterLayer');
+  var demoRange = document.getElementById('demoRange');
+  var demoWrap = document.getElementById('demoWrap');
+  function syncDemo() {
+    demoLayer.style.width = demoRange.value + '%';
+    demoAfter.style.width = demoWrap.clientWidth + 'px';
+    demoAfter.style.maxWidth = 'none';
+  }
+  demoTabs.forEach(function (t) {
+    t.addEventListener('click', function () {
+      demoTabs.forEach(function (x) { x.classList.remove('active'); });
+      t.classList.add('active');
+      demoBefore.src = t.dataset.before;
+      demoAfter.src = t.dataset.after;
+    });
+  });
+  demoRange.addEventListener('input', syncDemo);
+  window.addEventListener('resize', syncDemo);
+  syncDemo();
+</script>
 </body>
 </html>

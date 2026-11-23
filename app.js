@@ -368,3 +368,16 @@ async function applyRefine() {
   }
   exitRefine();
 }
+
+/* Landing-page samples: fetch a sample image and run the cutout on it. */
+window.cutzySample = async (url) => {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("sample fetch failed");
+    const blob = await res.blob();
+    handleFile(new File([blob], "sample.svg", { type: blob.type || "image/svg+xml" }));
+    document.getElementById("tool")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch {
+    alert("Couldn't load that sample — try uploading your own photo.");
+  }
+};
