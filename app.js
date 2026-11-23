@@ -36,14 +36,24 @@ if ("serviceWorker" in navigator) {
 /* ---------- speed: small quantized model + WebGPU when available ----------
    The default was isnet_fp16 (~80 MB, WASM CPU) — minutes on phones.
    isnet_quint8 is ~40 MB and int8 inference is faster; device 'gpu' uses
-   WebGPU where the browser has it (Chrome/Edge desktop + Android, Safari 26+),
-   falling back to CPU otherwise. The model is preloaded in the background on
-   page load so the first cutout doesn't wait for the download. */
+   WebGPU where the browser has a REAL GPU (Chrome/Edge desktop + Android,
+   Safari 26+), falling back to CPU otherwise. The adapter is actually
+   requested — 'gpu' merely existing in the browser is not proof — and a
+   SwiftShader software adapter counts as no GPU (it is slower than CPU).
+   The model is preloaded in the background on page load so the first
+   cutout doesn't wait for the download. */
 const bgConfig = {
   model: "isnet_quint8",
-  device: ("gpu" in navigator) ? "gpu" : "cpu",
+  device: "cpu", // switched to 'gpu' only after a real WebGPU adapter is confirmed
 };
-const warmModel = () => {
+const warmModel = async () => {
+  if ("gpu" in navigator) {
+    try {
+      const adapter = await navigator.gpu.requestAdapter();
+      const dev = String(adapter?.info?.device || "").toLowerCase();
+      if (adapter && !dev.includes("swiftshader")) bgConfig.device = "gpu";
+    } catch { /* stays on CPU */ }
+  }
   preload(bgConfig).then(() => {
     if (els.modelStatus) els.modelStatus.textContent = "AI ready — cutouts run in seconds.";
   }).catch(() => { /* first upload downloads it instead */ });
@@ -87,7 +97,8 @@ async function handleFile(file) {
   const t0 = performance.now();
   let seen = 0;
   let inferTimer = null;
-  const stopInferTimer = () => { if (inferTimer) { clearInterval(inferTimer); inferTimer = null; } };
+  let inferFallback = null;
+  const stopInferTimer = () => { if (inferTimer) { clearInterval(inferTimer); inferTimer = null; } if (inferFallback) { clearTimeout(inferFallback); inferFallback = null; } };
   // The library's progress only covers the model download: once it hits
   // 100% the actual cutout still runs with no further updates, so switch
   // to a visibly-alive state with an elapsed timer instead of a dead 100%.
@@ -100,11 +111,15 @@ async function handleFile(file) {
       els.procPct.textContent = Math.floor((performance.now() - t0) / 1000) + "s";
     }, 500);
   };
+  // If the model was preloaded, the progress callback may never fire at all
+  // (nothing left to download) — without this the UI would sit dead at 2%
+  // while the cutout runs. Fall back to the inference phase after 2s.
+  inferFallback = setTimeout(() => { if (seen === 0) startInferencePhase(); }, 2000);
   try {
     const out = await removeBackground(workBlob, {
       ...bgConfig,
       progress: (_key, current, total) => {
-        if (total > 0) {
+        if (total > 0 && !inferTimer) {
           seen = Math.max(seen, (current / total) * 100);
           if (seen >= 100) startInferencePhase();
           else setProgress(Math.min(seen, 99), "Downloading AI model…");
