@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Cutzy — Free Background Remover, No Signup, No Watermark</title>
+<meta name="description" content="Remove image backgrounds free, on your phone. No signup, no watermark, photos never leave your device.">
+<meta name="theme-color" content="#6d28d9">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="logo"><span class="logo-mark">✂</span> Cutzy</div>
+  <div class="tagline">free · no signup · no watermark · private</div>
+</header>
+
+<main>
+  <!-- STEP 1: pick a photo -->
+  <section id="dropzone" class="card dropzone" tabindex="0" role="button" aria-label="Choose a photo">
+    <div class="dz-art">🖼️</div>
+    <p class="dz-title">Tap to choose a photo</p>
+    <p class="dz-sub">or drop / paste an image here · works offline after first load</p>
+    <input type="file" id="fileInput" accept="image/*" hidden>
+    <button id="cameraBtn" class="btn ghost" type="button">📷 Use camera</button>
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
+  </section>
+
+  <!-- STEP 2: processing -->
+  <section id="progressCard" class="card hidden">
+    <p class="proc-label">Removing background… <span id="procPct">0%</span></p>
+    <div class="progress"><div id="procBar" class="progress-bar"></div></div>
+    <p class="proc-note">First run downloads the AI model once (~40&nbsp;MB). After that it works fully offline and your photos never leave this phone.</p>
+  </section>
+
+  <!-- STEP 3: result -->
+  <section id="resultCard" class="card hidden">
+    <div class="compare-wrap">
+      <img id="imgBefore" class="compare-img" alt="Original photo">
+      <div id="afterLayer" class="compare-after">
+        <img id="imgAfter" class="compare-img" alt="Background removed">
+      </div>
+      <input id="compareRange" type="range" min="0" max="100" value="50" aria-label="Before after slider">
+      <div class="compare-hint">◀ drag to compare ▶</div>
+    </div>
+
+    <div class="bg-row" role="group" aria-label="Background">
+      <button class="bg-chip active" data-bg="checker" type="button" title="Transparent"><span class="swatch checker"></span></button>
+      <button class="bg-chip" data-bg="white" type="button" title="White"><span class="swatch" style="background:#fff"></span></button>
+      <button class="bg-chip" data-bg="black" type="button" title="Black"><span class="swatch" style="background:#000"></span></button>
+      <button class="bg-chip" data-bg="blur" type="button" title="Blurred original"><span class="swatch blur"></span></button>
+      <label class="bg-chip" title="Pick a color"><input type="color" id="bgColor" value="#6d28d9" hidden><span class="swatch" id="colorSwatch" style="background:#6d28d9"></span></label>
+    </div>
+
+    <!-- manual edge touch-up -->
+    <section id="refineCard" class="card hidden">
+      <div class="refine-stage"><canvas id="refineCanvas"></canvas></div>
+      <div class="refine-tools">
+        <div class="refine-modes" role="group" aria-label="Brush mode">
+          <button id="eraseMode" class="btn mode active" type="button">🧽 Erase</button>
+          <button id="keepMode" class="btn mode" type="button">🖌 Restore</button>
+        </div>
+        <label class="refine-size">Brush <input id="brushSize" type="range" min="8" max="140" value="32"> <span id="brushSizeVal">32px</span></label>
+        <div class="refine-actions">
+          <button id="undoStroke" class="btn ghost" type="button">↩ Undo</button>
+          <button id="refineDone" class="btn primary" type="button">✓ Done</button>
+          <button id="refineCancel" class="btn ghost" type="button">✕ Cancel</button>
+        </div>
+      </div>
+      <p class="fineprint">Paint over edges the AI missed — hair, fur, glass. Restore brings back the original photo underneath. All on-device.</p>
+    </section>
+
+    <div class="actions">
+      <button id="downloadBtn" class="btn primary" type="button">⬇ Download PNG</button>
+      <button id="shareBtn" class="btn" type="button">📤 Share before/after</button>
+      <button id="refineBtn" class="btn" type="button">🖌 Refine edges</button>
+      <button id="newBtn" class="btn ghost" type="button">↺ New photo</button>
+    </div>
+    <p id="modelNote" class="fineprint"></p>
+  </section>
+
+  <section class="card how">
+    <h2>How it works</h2>
+    <ol>
+      <li><b>100% on-device.</b> The AI cutout runs in your browser — no uploads, no servers, no API bills.</li>
+      <li><b>Free forever.</b> No signup, no watermark, no daily limits on the core cutout.</li>
+      <li><b>Install it.</b> Use your browser's "Add to Home screen" — it opens like a real app, fullscreen.</li>
+    </ol>
+  </section>
+</main>
+
+<footer class="fineprint">Cutzy · Free background remover · MIT · Photos never leave your device</footer>
+
+<button id="installBtn" class="btn primary install-fab hidden" type="button">＋ Install app</button>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>
