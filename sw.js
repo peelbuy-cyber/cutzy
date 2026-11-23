@@ -1,4 +1,4 @@
-const CACHE = "cutzy-v5";
+const CACHE = "cutzy-v6";
 const ASSETS = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest",
   "./icons/icon.svg",
   "./demo/person-before.svg", "./demo/person-after.svg", "./demo/person-newbg.svg",

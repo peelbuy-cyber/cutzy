@@ -1,7 +1,7 @@
 /* Cutzy — all cutout work happens ON-DEVICE via @imgly/background-removal.
    No API keys, no uploads, no servers. First run downloads the AI model once (~40 MB),
    then everything works offline. */
-import { removeBackground } from "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1/+esm";
+import { removeBackground, preload } from "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1/+esm";
 
 const $ = (id) => document.getElementById(id);
 const els = {
@@ -15,6 +15,7 @@ const els = {
   downloadBtn: $("downloadBtn"), shareBtn: $("shareBtn"), refineBtn: $("refineBtn"), newBtn: $("newBtn"),
   modelNote: $("modelNote"), installBtn: $("installBtn"), procNote: document.querySelector("#progressCard .proc-note"),
   refineCard: $("refineCard"), refineCanvas: $("refineCanvas"),
+  modelStatus: $("modelStatus"),
   eraseMode: $("eraseMode"), keepMode: $("keepMode"),
   brushSize: $("brushSize"), brushSizeVal: $("brushSizeVal"),
   undoStroke: $("undoStroke"), refineDone: $("refineDone"), refineCancel: $("refineCancel"),
@@ -28,6 +29,24 @@ if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").ca
 let deferredPrompt = null;
 window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferredPrompt = e; els.installBtn.classList.remove("hidden"); });
 els.installBtn.onclick = async () => { if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; els.installBtn.classList.add("hidden"); } };
+
+/* ---------- speed: small quantized model + WebGPU when available ----------
+   The default was isnet_fp16 (~80 MB, WASM CPU) — minutes on phones.
+   isnet_quint8 is ~40 MB and int8 inference is faster; device 'gpu' uses
+   WebGPU where the browser has it (Chrome/Edge desktop + Android, Safari 26+),
+   falling back to CPU otherwise. The model is preloaded in the background on
+   page load so the first cutout doesn't wait for the download. */
+const bgConfig = {
+  model: "isnet_quint8",
+  device: ("gpu" in navigator) ? "gpu" : "cpu",
+};
+const warmModel = () => {
+  preload(bgConfig).then(() => {
+    if (els.modelStatus) els.modelStatus.textContent = "AI ready — cutouts run in seconds.";
+  }).catch(() => { /* first upload downloads it instead */ });
+};
+if ("requestIdleCallback" in window) requestIdleCallback(warmModel, { timeout: 3000 });
+else setTimeout(warmModel, 1500);
 
 /* ---------- input: tap / camera / drag-drop / paste ---------- */
 els.dropzone.addEventListener("click", (e) => { if (!e.target.closest("#cameraBtn")) els.fileInput.click(); });
@@ -66,9 +85,10 @@ async function handleFile(file) {
   els.progressCard.classList.remove("hidden");
   setProgress(2, "Loading image…");
 
-  // Downscale huge photos so phones stay fast (max 2048px side)
+  // Downscale huge photos so phones stay fast (max 1024px side — the model
+  // works at 1024 internally, so bigger inputs only cost time, not quality)
   const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, 2048 / Math.max(bitmap.width, bitmap.height));
+  const scale = Math.min(1, 1024 / Math.max(bitmap.width, bitmap.height));
   const w = Math.round(bitmap.width * scale), h = Math.round(bitmap.height * scale);
   const c = document.createElement("canvas"); c.width = w; c.height = h;
   c.getContext("2d").drawImage(bitmap, 0, 0, w, h);
@@ -95,6 +115,7 @@ async function handleFile(file) {
   };
   try {
     const out = await removeBackground(workBlob, {
+      ...bgConfig,
       progress: (_key, current, total) => {
         if (total > 0) {
           seen = Math.max(seen, (current / total) * 100);

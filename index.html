@@ -41,6 +41,7 @@
       <input type="file" id="fileInput" accept="image/*" hidden>
       <button id="cameraBtn" class="btn ghost" type="button">📷 Use camera</button>
       <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
+      <p class="fineprint" id="modelStatus">AI model loading in the background…</p>
     </section>
     <div class="samples">
       <p>No image? Try one of these:</p>
@@ -257,7 +258,7 @@
     <h2>FAQ</h2>
     <details><summary>Is Cutzy really free?</summary><p>Yes. The core cutout is free forever — no signup, no watermark, no daily limits. It runs on your device, so there is no server bill to pass on to you.</p></details>
     <details><summary>Do my photos get uploaded anywhere?</summary><p>No. The AI model downloads once to your browser (~40&nbsp;MB) and every cutout happens on your device. Your photos never leave your phone or computer.</p></details>
-    <details><summary>Why does the first cutout take a while?</summary><p>The first run downloads the AI model once. After that it is cached and cutouts start instantly. Big photos can still take a minute or two on slower devices — the progress bar shows a live timer while it works.</p></details>
+    <details><summary>Why does the first cutout take a while?</summary><p>The first run downloads the AI model once — it starts downloading in the background as soon as you open the page, so it is usually ready before you upload. After that it is cached and cutouts run in seconds. On older phones without WebGPU it can still take longer — the progress bar shows a live timer while it works.</p></details>
     <details><summary>What happens to my photo after I close the page?</summary><p>Nothing is stored. Your photo lives only in your browser tab while you use it.</p></details>
     <details><summary>Can I use the cutout commercially?</summary><p>Yes — your photos are yours, and the cutouts you make with them are yours to use, including for listings and ads. The tool itself is MIT-licensed.</p></details>
   </section>
