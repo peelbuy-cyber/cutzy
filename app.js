@@ -72,6 +72,27 @@ els.cameraInput.addEventListener("change", (e) => e.target.files[0] && handleFil
 els.dropzone.addEventListener("drop", (e) => { const f = e.dataTransfer.files[0]; if (f) handleFile(f); });
 window.addEventListener("paste", (e) => { const f = [...(e.clipboardData?.items || [])].find((i) => i.type.startsWith("image/"))?.getAsFile(); if (f) handleFile(f); });
 
+/* Decode any image file to something drawImage accepts. createImageBitmap
+   is fast but REJECTS SVGs with no intrinsic size (the sample files had
+   only a viewBox) — fall back to an <img> element, which renders them fine. */
+async function decodeImage(file) {
+  try {
+    return await createImageBitmap(file);
+  } catch {
+    const url = URL.createObjectURL(file);
+    try {
+      return await new Promise((resolve, reject) => {
+        const im = new Image();
+        im.onload = () => resolve(im);
+        im.onerror = () => reject(new Error("img decode failed"));
+        im.src = url;
+      });
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+}
+
 /* ---------- main pipeline ---------- */
 async function handleFile(file) {
   if (!file.type.startsWith("image/")) { alert("Please choose an image file."); return; }
@@ -110,9 +131,10 @@ async function handleFile(file) {
   // works at 1024 internally, so bigger inputs only cost time, not quality)
   let w = 0, h = 0, workBlob = null;
   try {
-    const bitmap = await createImageBitmap(file);
-    const scale = Math.min(1, 1024 / Math.max(bitmap.width, bitmap.height));
-    w = Math.round(bitmap.width * scale); h = Math.round(bitmap.height * scale);
+    const bitmap = await decodeImage(file);
+    const iw = bitmap.naturalWidth || bitmap.width, ih = bitmap.naturalHeight || bitmap.height;
+    const scale = Math.min(1, 1024 / Math.max(iw, ih));
+    w = Math.round(iw * scale); h = Math.round(ih * scale);
     const c = document.createElement("canvas"); c.width = w; c.height = h;
     c.getContext("2d").drawImage(bitmap, 0, 0, w, h);
     workBlob = await new Promise((r) => c.toBlob(r, "image/png"));
