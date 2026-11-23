@@ -119,11 +119,20 @@ async function handleFile(file) {
     els.procBar.classList.add("working");
     els.procPct.parentElement.firstChild.textContent = "Removing background… ";
     els.procNote.textContent = "Model downloaded — now cutting out. Big photos can take a minute or two; keep this tab open.";
+    // No live progress comes back during the cutout itself, so animate the
+    // bar 1%→99% on a slowing curve (fast at first, easing near 99%) and
+    // show the percentage, not seconds. It only hits 100% when the real
+    // result lands.
+    const inferStart = performance.now();
+    const startPct = Math.max(seen, 2);
     inferTimer = setInterval(() => {
+      const el = (performance.now() - inferStart) / 1000;
+      const pct = Math.min(99, startPct + (99 - startPct) * (1 - Math.exp(-el / 8)));
+      els.procBar.style.width = pct + "%";
+      els.procPct.textContent = Math.floor(pct) + "%";
       const s = Math.floor((performance.now() - t0) / 1000);
-      els.procPct.textContent = s + "s";
       if (s > 120 && !slowNoteShown) { slowNoteShown = true; els.procNote.textContent = "Still working — this device is slow at this step. Keep waiting, or try a smaller photo."; }
-    }, 500);
+    }, 100);
   };
   inferFallback = setTimeout(() => { if (seen === 0) startInferencePhase(); }, 2000);
 
