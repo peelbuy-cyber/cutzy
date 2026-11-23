@@ -33,6 +33,21 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister())).catch(() => {});
 }
 
+/* ---------- iOS Safari guard: phones kill the tab on the big model ----------
+   iOS Safari kills tabs that use too much memory ("A problem repeatedly
+   occurred"). The full-precision model (~80 MB) + WebGPU + a full-size
+   iPhone photo decoded in memory is enough to trip it — only sometimes,
+   which is why it happens on some uploads and not others. On iOS: use
+   the small model, CPU only (no WebGPU — ONNX's WebGPU backend is
+   unstable on Safari), a smaller working size, and don't preload the
+   model on page load. Desktop keeps the full-precision model. */
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const WORK_SIZE = isIOS ? 768 : 1024;
+const MODEL_NAME = isIOS ? "isnet_quint8" : "isnet_fp16";
+const MODEL_MB = isIOS ? "~40 MB" : "~80 MB";
+if (els.procNote) els.procNote.textContent = `First run downloads the AI model once (${MODEL_MB}). After that, cutouts run on your device and your photos never leave this phone.`;
+
 /* ---------- quality: full-precision model + WebGPU when available ----------
    isnet_quint8 (~40 MB, int8) was tried first for speed, but its quantized
    mask is noisy: it leaves coloured background residue (visible on white),
@@ -46,10 +61,11 @@ if ("serviceWorker" in navigator) {
    in the browser is not proof — and a SwiftShader software adapter counts
    as no GPU (it is slower than CPU). */
 const bgConfig = {
-  model: "isnet_fp16",
+  model: MODEL_NAME,
   device: "cpu", // switched to 'gpu' only after a real WebGPU adapter is confirmed
 };
 const warmModel = async () => {
+  if (isIOS) return; // iOS: load the small model on first upload, not at page load
   if ("gpu" in navigator) {
     try {
       const adapter = await navigator.gpu.requestAdapter();
@@ -169,7 +185,7 @@ async function handleFile(file) {
   if (!file.type.startsWith("image/")) { alert("Please choose an image file."); return; }
   resetUI();
   els.procBar.classList.remove("working");
-  els.procNote.textContent = "First run downloads the AI model once (~80 MB). After that, cutouts run on your device and your photos never leave this phone.";
+  els.procNote.textContent = `First run downloads the AI model once (${MODEL_MB}). After that, cutouts run on your device and your photos never leave this phone.`;
   els.dropzone.classList.add("hidden");
   els.progressCard.classList.remove("hidden");
   setProgress(2, "Loading image…");
@@ -207,18 +223,26 @@ async function handleFile(file) {
   };
   inferFallback = setTimeout(() => { if (seen === 0) startInferencePhase(); }, 2000);
 
-  // Downscale huge photos so phones stay fast (max 1024px side — the model
-  // works at 1024 internally, so bigger inputs only cost time, not quality)
+  // Downscale huge photos so phones stay fast (max 1024px side on desktop,
+  // 768px on iOS — the model works at 1024 internally, so bigger inputs
+  // only cost time and memory, not quality). The full-size photo is freed
+  // immediately after the downscale: a 12–48MP iPhone photo decoded in
+  // memory is 50–200 MB, and keeping it for the whole session is what
+  // kills Safari tabs. Only the downscaled copy is kept (blur background,
+  // share card and Restore all work at this size anyway).
   let w = 0, h = 0, workBlob = null;
   try {
     const bitmap = await decodeImage(file);
     const iw = bitmap.naturalWidth || bitmap.width, ih = bitmap.naturalHeight || bitmap.height;
-    const scale = Math.min(1, 1024 / Math.max(iw, ih));
+    const scale = Math.min(1, WORK_SIZE / Math.max(iw, ih));
     w = Math.round(iw * scale); h = Math.round(ih * scale);
     const c = document.createElement("canvas"); c.width = w; c.height = h;
     c.getContext("2d").drawImage(bitmap, 0, 0, w, h);
     workBlob = await new Promise((r) => c.toBlob(r, "image/png"));
-    Object.assign(state, { origBitmap: bitmap, w, h });
+    let smallBitmap = null;
+    try { smallBitmap = await createImageBitmap(c); } catch { /* keep the original */ }
+    if (bitmap.close) { try { bitmap.close(); } catch { /* already freed */ } }
+    Object.assign(state, { origBitmap: smallBitmap || bitmap, w, h });
     state.origURL = URL.createObjectURL(file);
     els.imgBefore.src = state.origURL;
   } catch {
