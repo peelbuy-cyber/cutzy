@@ -1,4 +1,4 @@
-const CACHE = "cutzy-v4";
+const CACHE = "cutzy-v5";
 const ASSETS = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest",
   "./icons/icon.svg",
   "./demo/person-before.svg", "./demo/person-after.svg", "./demo/person-newbg.svg",
@@ -14,7 +14,16 @@ const ASSETS = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.we
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
 });
-self.addEventListener("activate", (e) => { e.waitUntil(self.clients.claim()); });
+self.addEventListener("activate", (e) => {
+  // Delete old caches (v3/v4) so returning visitors stop getting the stale
+  // cached page and images after an update — without this, caches.match()
+  // can keep serving the old version forever.
+  e.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
+  );
+});
 
 /* File handed in from Android's share sheet (Web Share Target POST) */
 let pendingSharedFile = null;
