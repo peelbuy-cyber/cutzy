@@ -126,6 +126,7 @@ async function handleFile(file) {
     els.dropzone.classList.remove("hidden");
     return;
   }
+  try {
     const out = await removeBackground(workBlob, {
       ...bgConfig,
       progress: (_key, current, total) => {
